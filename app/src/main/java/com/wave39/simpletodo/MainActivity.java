@@ -9,6 +9,8 @@ import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
 
+import com.wave39.simpletodo.Model.ListItem;
+
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -16,8 +18,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
-    ArrayList<String> items;
-    ArrayAdapter<String> itemsAdapter;
+    ArrayList<ListItem> items;
+    ArrayAdapter<ListItem> itemsAdapter;
     ListView lvItems;
 
     private final int EDIT_TEXT_CODE = 2209;
@@ -60,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
     private void editItem(int position) {
         Intent i = new Intent(MainActivity.this, EditItemActivity.class);
         i.putExtra("itemPosition", position);
-        i.putExtra("itemText", items.get(position));
+        i.putExtra("itemText", items.get(position).listItemString);
         startActivityForResult(i, EDIT_TEXT_CODE);
     }
 
@@ -69,7 +71,8 @@ public class MainActivity extends AppCompatActivity {
         if (resultCode == RESULT_OK && requestCode == EDIT_TEXT_CODE) {
             String itemText = data.getExtras().getString("itemText");
             int itemPosition = data.getExtras().getInt("itemPosition", 0);
-            items.set(itemPosition, itemText);
+            ListItem newListItem = new ListItem(itemText);
+            items.set(itemPosition, newListItem);
             itemsAdapter.notifyDataSetChanged();
             writeItems();
         }
@@ -79,7 +82,8 @@ public class MainActivity extends AppCompatActivity {
         EditText etNewItem = (EditText)findViewById(R.id.etNewItem);
         String itemText = etNewItem.getText().toString();
         if (itemText.length() > 0) {
-            itemsAdapter.add(itemText);
+            ListItem newListItem = new ListItem(itemText);
+            itemsAdapter.add(newListItem);
             etNewItem.setText("");
             writeItems();
         }
@@ -89,17 +93,28 @@ public class MainActivity extends AppCompatActivity {
         File filesDir = getFilesDir();
         File todoFile = new File(filesDir, "todo.txt");
         try {
-            items = new ArrayList<>(FileUtils.readLines(todoFile));
+            ArrayList<String> stringItems = new ArrayList<>(FileUtils.readLines(todoFile));
+            items = new ArrayList<>();
+            for (String str : stringItems) {
+                items.add(new ListItem(str));
+            }
         } catch (IOException e) {
             items = new ArrayList<>();
         }
+
+        ListItem.reorder(items);
     }
 
     private void writeItems() {
         File filesDir = getFilesDir();
         File todoFile = new File(filesDir, "todo.txt");
         try {
-            FileUtils.writeLines(todoFile, items);
+            ArrayList<String> stringItems = new ArrayList<>();
+            for (ListItem item : items) {
+                stringItems.add(item.listItemString);
+            }
+
+            FileUtils.writeLines(todoFile, stringItems);
         } catch (IOException e) {
             e.printStackTrace();
         }
