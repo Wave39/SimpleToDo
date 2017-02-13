@@ -8,8 +8,11 @@ import java.util.ArrayList;
  */
 
 public class ListItem {
+    public int listItemID;
     public String listItemString;
     public int sortOrder;
+
+    public ListItem() { }
 
     public ListItem(String s) {
         this.listItemString = s;

@@ -9,12 +9,9 @@ import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
 
+import com.wave39.simpletodo.Data.TodoItemDatabaseHelper;
 import com.wave39.simpletodo.Model.ListItem;
 
-import org.apache.commons.io.FileUtils;
-
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
@@ -80,8 +77,12 @@ public class MainActivity extends AppCompatActivity {
 
     public void onAddItem(View v) {
         EditText etNewItem = (EditText)findViewById(R.id.etNewItem);
-        String itemText = etNewItem.getText().toString();
-        if (itemText.length() > 0) {
+        String itemText = null;
+        if (etNewItem != null) {
+            itemText = etNewItem.getText().toString();
+        }
+
+        if (itemText != null && itemText.length() > 0) {
             ListItem newListItem = new ListItem(itemText);
             itemsAdapter.add(newListItem);
             etNewItem.setText("");
@@ -90,33 +91,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void readItems() {
-        File filesDir = getFilesDir();
-        File todoFile = new File(filesDir, "todo.txt");
-        try {
-            ArrayList<String> stringItems = new ArrayList<>(FileUtils.readLines(todoFile));
-            items = new ArrayList<>();
-            for (String str : stringItems) {
-                items.add(new ListItem(str));
-            }
-        } catch (IOException e) {
-            items = new ArrayList<>();
-        }
-
-        ListItem.reorder(items);
+        TodoItemDatabaseHelper databaseHelper = TodoItemDatabaseHelper.getInstance(this);
+        items = databaseHelper.getAllListItems();
     }
 
     private void writeItems() {
-        File filesDir = getFilesDir();
-        File todoFile = new File(filesDir, "todo.txt");
-        try {
-            ArrayList<String> stringItems = new ArrayList<>();
-            for (ListItem item : items) {
-                stringItems.add(item.listItemString);
-            }
-
-            FileUtils.writeLines(todoFile, stringItems);
-        } catch (IOException e) {
-            e.printStackTrace();
+        TodoItemDatabaseHelper databaseHelper = TodoItemDatabaseHelper.getInstance(this);
+        databaseHelper.deleteAllListItems();
+        ListItem.reorder(items);
+        for (ListItem item : items) {
+            databaseHelper.addOrUpdateListItem(item);
         }
     }
 
